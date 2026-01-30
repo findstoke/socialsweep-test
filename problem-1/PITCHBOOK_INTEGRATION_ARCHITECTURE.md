@@ -6,7 +6,7 @@ This design focuses on creating a data enrichment system for a social networking
 
 I've optimized for extensibility and scalability while considering cost, rate limiting, and agility.
 
-The architecture consists of stateless services that utilize an asynchronous, event-driven pipeline for data ingestion. Cache hits are served synchronously; cache misses trigger async enrichment and return immediately with a request ID for polling.
+The architecture consists of stateless services that use an asynchronous, event-driven pipeline for data ingestion. Cache hits are served synchronously; cache misses trigger async enrichment and return immediately with a request ID for polling.
 
 The design is provider agnostic, with the core architecture supporting n data providers. The addition of a new provider requires implementing two interfaces: provider adapter (fetch logic) and normalization (transform logic).
 
@@ -48,7 +48,7 @@ Unified data representation with source tracking enables multi-provider aggregat
 
 ## Adapter Specification
 
-The adapter is a shared typescript module leveraged by the fetch service for ingestion and by the normalization service for transforming raw PB payloads into enrichment facts.
+The adapter is a shared typescript module used by the fetch service for ingestion and by the normalization service for transforming raw PB payloads into enrichment facts.
 
 The adapter implements a provider-agnostic interface:
 
@@ -117,16 +117,16 @@ Each fact includes `observedAt` timestamp (when fetched) and `source: "pitchbook
 
 **Error Handling:**
 
-Normalization is deterministic and side-effect-free, allowing reprocessing without re-fetching from PB.
+Normalization allows for reprocessing without re-fetching from PB.
 
 - Retryable errors (e.g., network timeout) are surfaced to the worker so Cloud Tasks can retry.
 - Fatal errors (e.g., invalid response format) are logged, and the worker returns 200 OK to the queue to prevent retries.
 
 ## Orchestration Logic
 
-The orchestration logic is contained within the broker service, a stateless service that orchestrates adapter selection and execution. The service leverages caching, provider prioritization, and conditional calling to minimize cost.
+The orchestration logic is contained within the broker service, handling adapter selection and execution. It uses caching, provider prioritization, and conditional calling to minimize cost.
 
-The broker service exposes a stateless HTTP API for enrichment requests:
+It exposes a HTTP API for enrichment requests:
 
 ```
 POST /api/v1/enrich/individual - Enriches an individual by email, linkedinUrl, or name
@@ -141,16 +141,16 @@ GET /api/v1/requests/{id} - Poll enrichment status
    - Cache Hit: return cached facts
    - Cache Miss: continue to the next step
 
-2. **Quota Check:** Verify daily budget is not exhausted
+2. **Quota Check:** checks if daily budget is used up
    - Available: Continue to provider selection
    - Unavailable: Return 429 with retry after header
 
 3. **Provider Selection**
-   - PDL/Apollo first - PDL is cheaper with broader coverage, Apollo for contact data augmentation
+   - PDL/Apollo first - PDL is cheaper with broader coverage, Apollo for contact data (e.g., instagram)
    - PB if ANY condition met:
      - No funding data OR cached data is older than 7 days (companies) / 30 days (individuals)
      - Request requires investor/executive data (e.g., query contains: "investor", "executive", "director", "officer")
-     - Entity is in a relevant sector (e.g., query contains: "healthcare", "technology", "finance")
+     - In a relevant sector (e.g., query contains: "healthcare", "technology", "finance")
 
 4. **Asynchronous Execution**
    - Set cache status to "pending" (prevents duplicate requests, 5-minute TTL to prevent lockout)
@@ -159,8 +159,8 @@ GET /api/v1/requests/{id} - Poll enrichment status
 
 ### Cost Management and Rate Limiting
 
-- **Rate Limiting:** API rate limits are enforced via Cloud Task Queue (`max_dispatches_per_second`)
-- **Cost Control:** Daily budget caps are tracked via a centralized counter in cache. The broker checks this before enqueuing new tasks to ensure we never exceed the daily cap rate: 10,000/day.
+- **Rate Limiting:** API rate limits are enforced via Cloud Tasks (`max_dispatches_per_second`)
+- **Cost Control:** Daily rate limit tracked via a centralized counter in cache. The broker checks this before eadding new tasks to make sure we never exceed the daily cap rate: 10,000/day.
 
 > **Note:** The retry behaviour is handled by Cloud Tasks via configuration: [RetryConfig](https://docs.cloud.google.com/php/docs/reference/cloud-tasks/latest/V2.RetryConfig)
 
@@ -181,13 +181,13 @@ Batch requests (`POST /api/v1/enrich/batch`) are sent to a low-priority queue:
 
 This ensures that high-priority enrichment requests aren't blocked by large batch jobs.
 
-> **Note:** For large batch requests, task creation is chunked in groups of up to 100 entities.
+> **Note:** For large batch requests, creating tasks is chunked in groups (e.g., 100)
 
 ### PitchBook Downtime
 
 Cloud Tasks handles transient failures via exponential backoff. For sustained outages:
 
-- **Circuit Breaker:** To avoid excessive API costs during sustained outages, a circuit breaker stops the broker from enqueueing new PB tasks if the error rate exceeds 50% over 5 minutes.
+- **Circuit Breaker:** To avoid excessive API costs during sustained outages, a circuit breaker stops the broker from enqueueing new PB tasks if the error rate exceeds (e.g., 50% over 5 minutes).
 - **Recovery:** Tasks already in the queue remain and will be completed automatically when PB recovers.
 
 ## Data Model
@@ -358,8 +358,8 @@ The distributed nature of this architecture supports a phased approach with comp
 
 ### Testing
 
-- **Unit Tests:** Coverage for `Adapter.normalize()` logic to ensure that the complex nested data maps correctly to the schema
-- **Integration Tests:** Record real PB API responses and "replay" them during tests. This allows for testing `Adapter.fetch()` deterministically without hitting the live API or wasting quota in CI/CD runs
+- **Unit Tests:** Coverage for Worker Services, Adapter, and Broker Service.
+- **Integration Tests:** Record PB API responses and for replaying during tests. This allows for testing `Adapter.fetch()` without hitting the live API
 - **Security:** Integrate vulnerability scanning tools (e.g., Snyk) into the CI/CD pipeline to automatically scan new code for vulnerabilities
 
 ## Trade-offs and Decisions
@@ -502,4 +502,4 @@ The design approaches security holistically:
 
 ### Observability
 
-The architecture uses GCP's native observability stack (Cloud Monitoring, Cloud Logging, and Cloud Trace) for minimal operational overhead. Key metrics: cost per enrichment, quota usage for PB (alert at 8k/10k daily), cache hit rate, queue depth, and error rates. Alerts trigger on quota > 80%, errors > 5%, or queue depth > 1000. Optional: Monitoring (e.g., PostHog) for user-facing metrics (search latency, enrichment completion time) to connect performance to business outcomes.
+The architecture uses GCP's native observability stack (Cloud Monitoring, Cloud Logging, and Cloud Trace) for operational simplicity. Key metrics: cost per enrichment, quota usage for PB (alert at 8k/10k daily), cache hit rate, queue depth, and error rates. Alerts trigger on quota > 80%, errors > 5%, or queue depth > 1000. Optional: Monitoring (e.g., PostHog) for user-facing metrics (search latency, enrichment completion time) to connect performance to business outcomes.

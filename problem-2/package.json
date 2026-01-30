@@ -1,0 +1,32 @@
+{
+  "name": "socialsweep-test",
+  "version": "1.0.0",
+  "description": "Technical Assessment for SocialSweep",
+  "homepage": "https://github.com/findstoke/socialsweep-test#readme",
+  "bugs": {
+    "url": "https://github.com/findstoke/socialsweep-test/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/findstoke/socialsweep-test.git"
+  },
+  "license": "ISC",
+  "author": "josh billington",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "cli": "npx tsx console-app.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^2.1.9",
+    "typescript": "^5.5.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}

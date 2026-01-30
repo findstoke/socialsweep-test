@@ -1,5 +1,5 @@
 // Person entity
-interface Person {
+export interface Person {
   id: string;
   fullName: string;
   title?: string;
@@ -16,7 +16,7 @@ interface Person {
 }
 
 // Organization entity (new - for companies with PitchBook data)
-interface Organization {
+export interface Organization {
   id: string;
   name: string;
   domain?: string;
@@ -52,7 +52,7 @@ interface Organization {
 }
 
 // Search query
-interface SearchQuery {
+export interface SearchQuery {
   text: string;                    // User's natural language query
   filters?: {
     location?: string;             // City, state, or country
@@ -68,10 +68,42 @@ interface SearchQuery {
 }
 
 // Search result
-interface SearchResult {
+export interface SearchResult {
   person?: Person;
   organization?: Organization;
   score: number;                    // 0.0 to 1.0
-  matchGrade: "perfect" | "strong" | "moderate" | "weak";
+  matchGrade: MatchGrade;
   explanation?: string;             // Why this result matches
+}
+
+/** Match quality grade */
+export type MatchGrade = 'perfect' | 'strong' | 'moderate' | 'weak';
+
+/**
+ * Pre-processed person data for efficient searching.
+ * Caches lowercase versions of frequently searched fields.
+ */
+export interface ProcessedPerson {
+  original: Person;
+  fullNameLower: string;
+  titleLower: string;
+  bioLower: string;
+  cityLower: string;
+  stateLower: string;
+  countryLower: string;
+  companyLower: string;
+  tagsLower: string[];
+  titleTokens: string[];
+  companyOrg?: Organization;
+}
+
+/**
+ * Pre-processed organization data for efficient searching.
+ * Caches lowercase versions of frequently searched fields.
+ */
+export interface ProcessedOrganization {
+  original: Organization;
+  nameLower: string;
+  industryLower: string;
+  investorsLower: string[];
 }

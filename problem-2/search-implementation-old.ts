@@ -1,5 +1,7 @@
+import { Person, Organization, SearchQuery, SearchResult } from "./types";
+
 // Simple search service (starter code)
-class SearchServiceOld {
+export class SearchServiceOld {
   private people: Person[] = [];
   private organizations: Organization[] = [];
 
@@ -35,7 +37,10 @@ class SearchServiceOld {
     return results.sort((a, b) => b.score - a.score);
   }
 
-  private searchPerson(person: Person, query: SearchQuery): SearchResult | null {
+  private searchPerson(
+    person: Person,
+    query: SearchQuery,
+  ): SearchResult | null {
     let score = 0.0;
     const matches: string[] = [];
 
@@ -57,9 +62,11 @@ class SearchServiceOld {
     // Filter matching
     if (query.filters?.location) {
       const loc = query.filters.location.toLowerCase();
-      if (person.location?.city?.toLowerCase().includes(loc) ||
-          person.location?.state?.toLowerCase().includes(loc) ||
-          person.location?.country?.toLowerCase().includes(loc)) {
+      if (
+        person.location?.city?.toLowerCase().includes(loc) ||
+        person.location?.state?.toLowerCase().includes(loc) ||
+        person.location?.country?.toLowerCase().includes(loc)
+      ) {
         score += 0.1;
         matches.push("location match");
       } else {
@@ -89,7 +96,10 @@ class SearchServiceOld {
     return null;
   }
 
-  private searchOrganization(org: Organization, query: SearchQuery): SearchResult | null {
+  private searchOrganization(
+    org: Organization,
+    query: SearchQuery,
+  ): SearchResult | null {
     let score = 0.0;
     const matches: string[] = [];
 
@@ -116,7 +126,10 @@ class SearchServiceOld {
     }
 
     if (query.filters?.minFunding) {
-      if (org.funding?.totalRaised && org.funding.totalRaised >= query.filters.minFunding) {
+      if (
+        org.funding?.totalRaised &&
+        org.funding.totalRaised >= query.filters.minFunding
+      ) {
         score += 0.2;
         matches.push("funding amount match");
       } else {
@@ -136,15 +149,17 @@ class SearchServiceOld {
     return null;
   }
 
-  private assignGrade(score: number): "perfect" | "strong" | "moderate" | "weak" {
+  private assignGrade(
+    score: number,
+  ): "perfect" | "strong" | "moderate" | "weak" {
     if (score >= 0.8) return "perfect";
     if (score >= 0.6) return "strong";
     if (score >= 0.4) return "moderate";
     return "weak";
   }
 }
-Sample Data
-const samplePeople: Person[] = [
+
+export const samplePeopleOld: Person[] = [
   {
     id: "1",
     fullName: "Sarah Chen",
@@ -180,7 +195,7 @@ const samplePeople: Person[] = [
   },
 ];
 
-const sampleOrganizationsOld: Organization[] = [
+export const sampleOrganizationsOld: Organization[] = [
   {
     id: "org1",
     name: "TechStart Inc",
@@ -212,7 +227,11 @@ const sampleOrganizationsOld: Organization[] = [
     },
     investors: ["Sequoia Capital", "Andreessen Horowitz", "Y Combinator"],
     executives: [
-      { name: "Michael Rodriguez", title: "CTO", email: "michael@techstart.com" },
+      {
+        name: "Michael Rodriguez",
+        title: "CTO",
+        email: "michael@techstart.com",
+      },
       { name: "John Smith", title: "CEO", email: "john@techstart.com" },
     ],
     enrichedAt: new Date("2024-01-20"),
